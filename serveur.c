@@ -9,6 +9,7 @@
  */
 
 #define _POSIX_C_SOURCE 200809L  // Active certaines fonctions POSIX modernes
+#define MAX_FEEDBACK 50
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,6 +54,14 @@ typedef struct {
     time_t created;                 // Date/heure de création
 } ticket_t;
 
+// Structure d’un feedback utilisateur
+typedef struct {
+    char username[MAX_USER];
+    int note_reactivite;
+    int note_competence;
+    int note_satisfaction;
+} feedback_t;
+
 // --- Structure partagée entre processus ---
 typedef struct {
     pthread_mutex_t mutex;          // Mutex partagé entre processus
@@ -60,6 +69,8 @@ typedef struct {
     ticket_t tickets[MAX_TICKETS];  // Tableau circulaire de tickets
     int next_index;                 // Position d’insertion suivante
     uint32_t next_id;               // Prochain ID de ticket
+    feedback_t feedbacks[MAX_FEEDBACK]; // Tableau circulaire de feedbacks
+    int next_feedback_index;        // Position d’insertion suivante pour feedbacks
 } shared_data_t;
 
 static shared_data_t *g_shm = NULL; // Pointeur global vers la mémoire partagée
@@ -90,7 +101,14 @@ static void shm_init_if_needed() {
             g_shm->tickets[i].title[0]= '\0';
             g_shm->tickets[i].desc[0]= '\0';
         }
-        g_shm->initialized = 1;
+        g_shm->next_feedback_index = 0;
+        for (int i = 0; i < MAX_FEEDBACK; i++) {
+            g_shm->feedbacks[i].username[0] = '\0';
+            g_shm->feedbacks[i].note_reactivite = -1;
+            g_shm->feedbacks[i].note_competence = -1;
+            g_shm->feedbacks[i].note_satisfaction = -1;
+            g_shm->initialized = 1;
+        }
     }
 
     // Unlock le mutex
@@ -184,6 +202,20 @@ static int insert_ticket(const char *owner, const char *title, const char *desc,
 
     return 0;
 }
+
+// Ajoute un feedback utilisateur
+static void add_feedback(const char *username, int n1, int n2, int n3) {
+    int idx = g_shm->next_feedback_index % MAX_FEEDBACK;
+    feedback_t *f = &g_shm->feedbacks[idx];
+
+    strncpy(f->username, username, MAX_USER-1);
+    f->note_reactivite = n1;
+    f->note_competence = n2;
+    f->note_satisfaction = n3;
+
+    g_shm->next_feedback_index++;
+}
+
 
 // Liste les tickets appartenant à un utilisateur
 static void list_tickets_for_owner(const char *owner, char *out, size_t outlen) {
@@ -414,6 +446,42 @@ static void *client_thread(void *arg) {
             }
             continue;
         }
+        // --- Commande EXIT ---
+        if (strcmp(buf, "exit") == 0) {
+            if (username[0] == 0) {
+                sendall(sock, "Vous devez être identifié avant de quitter.\n");
+                continue;
+            }
+
+            if (!is_technician) {
+                sendall(sock, "Merci de donner votre avis avant de quitter.\n");
+                sendall(sock, "Notez la réactivité du service (0-5) : ");
+                ssize_t r = recv(sock, buf, sizeof(buf)-1, 0);
+                buf[r] = '\0';
+                int n1 = atoi(buf);
+
+                sendall(sock, "Notez la compétence du technicien (0-5) : ");
+                r = recv(sock, buf, sizeof(buf)-1, 0);
+                buf[r] = '\0';
+                int n2 = atoi(buf);
+
+                sendall(sock, "Notez votre satisfaction globale (0-5) : ");
+                r = recv(sock, buf, sizeof(buf)-1, 0);
+                buf[r] = '\0';
+                int n3 = atoi(buf);
+
+                pthread_mutex_lock(&g_shm->mutex);
+                add_feedback(username, n1, n2, n3);
+                pthread_mutex_unlock(&g_shm->mutex);
+
+                sendall(sock, "Merci pour votre retour ! Au revoir.\n");
+            } else {
+                sendall(sock, "Déconnexion du technicien.\n");
+            }
+
+            break; // quitte la boucle du client
+        }
+
 
         // --- Commandes technicien ---
         if (is_technician) {
@@ -494,6 +562,25 @@ static void *client_thread(void *arg) {
                 pthread_mutex_unlock(&g_shm->mutex);
                 continue;
             }
+            if (strcmp(buf, "showFeedback") == 0) {
+                char out[2048];
+                out[0] = 0;
+                pthread_mutex_lock(&g_shm->mutex);
+                for (int i = 0; i < MAX_FEEDBACK; i++) {
+                    feedback_t *f = &g_shm->feedbacks[i];
+                    if (f->username[0] != '\0') {
+                        snprintf(out + strlen(out), sizeof(out) - strlen(out),
+                            "Client: %s | Réactivité:%d | Compétence:%d | Satisfaction:%d\n",
+                            f->username, f->note_reactivite, f->note_competence, f->note_satisfaction);
+                    }
+                }
+                pthread_mutex_unlock(&g_shm->mutex);
+                if (out[0] == 0)
+                    sendall(sock, "Aucun avis enregistré.\n");
+                else
+                    sendall(sock, out);
+                continue;
+            }
         }
 
         // Aide
@@ -506,6 +593,8 @@ static void *client_thread(void *arg) {
                 "list (technicien pour voir ses tickets)\n"
                 "take <id> (technicien)\n"
                 "close <id> (technicien)\n"
+                "showFeedback (technicien)\n"
+                "exit\n"
             );
             continue;
         }
@@ -535,7 +624,7 @@ int main(void) {
         perror_exit("Erreur lors de la création du socket");
 
     if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one))==-1) // Réutilisation d’adresse
-        fatal_error("Echec de setsockopt(SO_REUSEADDR)");
+        perror_exit("Echec de setsockopt(SO_REUSEADDR)");
 
     memset(&addr,0,sizeof(addr));
     addr.sin_family = AF_INET;
