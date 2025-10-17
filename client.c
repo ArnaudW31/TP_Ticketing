@@ -1,21 +1,3 @@
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-/* client.c
- * 
- * Client CLI simple pour communiquer avec server.c
- *
- * Usage:
- *    ./client
- * ou ./client <host> <port>
- * Commandes dispo : IDENT, sendTicket, etc.
- *
- * 
- */
-
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
