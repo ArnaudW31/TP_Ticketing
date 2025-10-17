@@ -23,9 +23,9 @@ Le client, en ligne de commande, permet de se connecter au serveur, s’identifi
 * Commandes disponibles :
 
   * `IDENT <nom>` → identification de l’utilisateur.
-  * `SENDTICKET` → envoi d’un ticket (titre + description).
-  * `LIST` → affichage des tickets présents.
-  * `QUIT` → fermeture propre de la connexion.
+  * `sendTicket` → envoi d’un ticket (titre + description).
+  * `list` → affichage des tickets présents.
+  * `quit` → fermeture propre de la connexion.
 * Interface simple en ligne de commande.
 
 ## Structure du projet
@@ -39,14 +39,12 @@ Le client, en ligne de commande, permet de se connecter au serveur, s’identifi
 
 ## Compilation
 
-Compiler les programmes avec `gcc` (ou `clang`) :
+Compiler les programmes avec `gcc`:
 
 ```bash
-gcc -Wall -pthread -o serveur serveur.c
-gcc -Wall -o client client.c
+gcc -o serveur serveur.c
+gcc -o client client.c
 ```
-
-> Le flag `-pthread` est requis côté serveur pour la synchronisation.
 
 ## Exécution
 
@@ -83,18 +81,18 @@ Exemple :
 
 ```
 $ ./serveur
-[INFO] Serveur en écoute sur 127.0.0.1:12345...
+Serveur en écoute sur 127.0.0.1:12345...
 
 $ ./client
 > IDENT Jules
-[OK] Bonjour Jules
-> SENDTICKET
-Titre : Bug interface
-Description : Le bouton "Envoyer" ne répond pas.
-[OK] Ticket ajouté
-> LIST
-#1 [Jules] Bug interface - 17/10/2025
-> QUIT
+Identifié en tant que  "Jules" (role = USER)
+> sendTicket -new "Bug interface" "Le bouton "Envoyer" ne répond pas."
+Ticket créé avec Id 1
+> list
+ID:1 | IN_PROGRESS | owner:Jules | tech:Jules | created:2025-09-18 16:01:08
+Title: Bug interface
+Desc: Le bouton "Envoyer" ne répond pas.
+> quit
 Déconnexion...
 ```
 
@@ -103,9 +101,8 @@ Déconnexion...
 
 * **C POSIX** (sockets, threads, mutex, mémoire partagée)
 * **TCP/IP**
-* **pthread** pour la synchronisation
+* **pthread**
 * **mmap / shm_open** pour la mémoire partagée
-* **CLI** minimaliste pour interaction rapide
 
 ---
 
