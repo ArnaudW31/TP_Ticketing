@@ -1,4 +1,4 @@
-/* server.c
+/* server.c 
  *
  * Serveur de ticketing :
  * - écoute TCP 127.0.0.1:12345
