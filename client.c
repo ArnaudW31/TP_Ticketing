@@ -1,4 +1,5 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
 /* client.c
  * 
@@ -12,6 +13,8 @@
  * 
  */
 
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
