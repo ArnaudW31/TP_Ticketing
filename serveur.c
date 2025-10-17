@@ -353,6 +353,7 @@ static void *client_thread(void *arg) {
         // Supprime les \n finaux
         char *p = buf + strlen(buf)-1;
         while (p >= buf && (*p == '\n' || *p == '\r')) { *p = '\0'; p--; }
+        //printf("%s\n",buf);
 
         // --- Commande IDENT ---
         if (strncmp(buf, "IDENT ", 6) == 0) {
@@ -454,21 +455,34 @@ static void *client_thread(void *arg) {
             }
 
             if (!is_technician) {
+                
                 sendall(sock, "Merci de donner votre avis avant de quitter.\n");
-                sendall(sock, "Notez la réactivité du service (0-5) : ");
-                ssize_t r = recv(sock, buf, sizeof(buf)-1, 0);
-                buf[r] = '\0';
-                int n1 = atoi(buf);
+                
+                int n1 = 0;
+                int n2 = 0;
+                int n3 = 0;
+                ssize_t rep;
+                
+                while (n1 == 0){
+                    sendall(sock, "Notez la réactivité du service (💩1-5🌟) : ");
+                    rep = recv(sock, buf, sizeof(buf)-1, 0);
+                    buf[rep] = '\0';
+                    n1 = atoi(buf);
+                }
 
-                sendall(sock, "Notez la compétence du technicien (0-5) : ");
-                r = recv(sock, buf, sizeof(buf)-1, 0);
-                buf[r] = '\0';
-                int n2 = atoi(buf);
+                while (n2 == 0){
+                    sendall(sock, "Notez la compétence du technicien (💩1-5🌟) : ");
+                    rep = recv(sock, buf, sizeof(buf)-1, 0);
+                    buf[rep] = '\0';
+                    n2 = atoi(buf);
+                }
 
-                sendall(sock, "Notez votre satisfaction globale (0-5) : ");
-                r = recv(sock, buf, sizeof(buf)-1, 0);
-                buf[r] = '\0';
-                int n3 = atoi(buf);
+                while (n3 == 0){
+                    sendall(sock, "Notez votre satisfaction globale (💩1-5🌟) : ");
+                    rep = recv(sock, buf, sizeof(buf)-1, 0);
+                    buf[rep] = '\0';
+                    n3 = atoi(buf);
+                }
 
                 pthread_mutex_lock(&g_shm->mutex);
                 add_feedback(username, n1, n2, n3);
@@ -530,6 +544,7 @@ static void *client_thread(void *arg) {
                 } else {
                     if (t->state == CLOSED) sendall(sock, "Ticket déjà clos.\n");
                     else {
+                        //printf("%d\n",assigned_count);
                         int assigned_count = count_assigned_to_technician(username);
                         if (assigned_count >= 5) {
                             sendall(sock, "Capacité maximale atteinte (5 tickets).\n");
@@ -568,6 +583,7 @@ static void *client_thread(void *arg) {
                 pthread_mutex_lock(&g_shm->mutex);
                 for (int i = 0; i < MAX_FEEDBACK; i++) {
                     feedback_t *f = &g_shm->feedbacks[i];
+                    //printf("%s\n",f->username);
                     if (f->username[0] != '\0') {
                         snprintf(out + strlen(out), sizeof(out) - strlen(out),
                             "Client: %s | Réactivité:%d | Compétence:%d | Satisfaction:%d\n",
