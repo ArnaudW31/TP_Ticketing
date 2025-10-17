@@ -21,6 +21,7 @@ void handle_sigint(int sig) {
     exit(EXIT_SUCCESS);
 }
 
+// Fonction principale
 int main(int argc, char **argv) {
     struct sockaddr_in addr = {0};
     const char *host = DEFAULT_HOST;
@@ -37,13 +38,15 @@ int main(int argc, char **argv) {
         port = (int)val;
     }
 
-    signal(SIGINT, handle_sigint);
+    signal(SIGINT, handle_sigint); // Gestion Ctrl+C
 
+    // Création du socket
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("Erreur socket");
         return EXIT_FAILURE;
     }
 
+    // Configuration de l'adresse du serveur
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
     if (inet_pton(AF_INET, host, &addr.sin_addr) != 1) {
@@ -52,12 +55,14 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
+    // Connexion au serveur
     if (connect(sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
         perror("Erreur connexion serveur");
         close(sock);
         return EXIT_FAILURE;
     }
 
+    // Connexion réussie
     printf("Connecté à %s:%d\n", host, port);
 
     char sendbuf[BUFSIZE];
@@ -80,13 +85,13 @@ int main(int argc, char **argv) {
 
         if (send(sock, sendbuf, strlen(sendbuf), 0) < 0) {
             perror("Erreur envoi");
-            break;
+            break;  // Quitte en cas d'erreur d'envoi
         }
 
         n = recv(sock, recvbuf, sizeof(recvbuf) - 1, 0);
         if (n <= 0) {
             printf("Serveur déconnecté.\n");
-            break;
+            break;  // Quitte en cas de déconnexion
         }
 
         recvbuf[n] = '\0';
