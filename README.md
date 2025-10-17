@@ -2,7 +2,7 @@
 
 ## Aperçu
 
-Ce projet implémente un **système client-serveur en C** basé sur **TCP/IP** permettant la gestion de "tickets" (demandes ou incidents).
+Ce projet implémente un **système client-serveur en C** permettant la gestion de tickets.
 Le serveur gère une **mémoire partagée POSIX** pour stocker les tickets et un **mutex inter-processus** (`PTHREAD_PROCESS_SHARED`) pour synchroniser l'accès concurrent.
 Le client, en ligne de commande, permet de se connecter au serveur, s’identifier et envoyer des tickets.
 
@@ -10,9 +10,9 @@ Le client, en ligne de commande, permet de se connecter au serveur, s’identifi
 
 ### Côté serveur (`serveur.c`)
 
-* Écoute sur **127.0.0.1:12345** (TCP).
-* Gestion d'une **mémoire partagée POSIX** `/ticket_shm`.
-* Stockage des tickets avec titre, description, auteur, horodatage.
+* Écoute sur **127.0.0.1:12345** mais possibilité de changer dans le code.
+* Gestion d'une **mémoire partagée POSIX**.
+* Stockage des tickets avec titre, description, auteur, date de création.
 * Synchronisation par **mutex partagé**.
 * Affichage des interactions et états du serveur.
 * Gestion concurrente possible des clients.
@@ -92,9 +92,6 @@ Ticket créé avec Id 1
 ID:1 | IN_PROGRESS | owner:Jules | tech:Jules | created:2025-09-18 16:01:08
 Title: Bug interface
 Desc: Le bouton "Envoyer" ne répond pas.
-> quit
-Déconnexion...
-```
 
 
 ## Technologies utilisées
