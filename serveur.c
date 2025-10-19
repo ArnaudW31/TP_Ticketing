@@ -120,7 +120,8 @@ static void shm_open_map() {
     int fd;
     size_t sz;
 
-    fd = shm_open(SHM_NAME, O_RDWR | O_CREAT, 0600); // Ouvre ou crée la mémoire partagée
+    //fd = shm_open(SHM_NAME, O_RDWR | O_CREAT, 0600); // Ouvre ou crée la mémoire partagée
+    fd = open("./shared_mem.dat", O_RDWR | O_CREAT, 0600);
     if (fd < 0) 
         perror_exit("Erreur lors de l'ouverture de la mémoire partagée");
 
