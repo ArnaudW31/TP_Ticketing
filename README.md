@@ -99,7 +99,7 @@ Desc: Le bouton "Envoyer" ne répond pas.
 * **C POSIX** (sockets, threads, mutex, mémoire partagée)
 * **TCP/IP**
 * **pthread**
-* **mmap / shm_open** pour la mémoire partagée
+* **mmap / open** pour la mémoire partagée dans le ficheir .dat
 
 ---
 
